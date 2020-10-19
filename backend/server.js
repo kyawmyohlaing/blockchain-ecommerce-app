@@ -72,10 +72,7 @@ const listenToEvents = () => {
             await payment.save();
         }
     });
-
-   
-
-
-};
+}
+listenToEvents();
 
 
