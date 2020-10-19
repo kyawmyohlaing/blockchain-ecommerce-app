@@ -3,6 +3,7 @@ const Router = require('@koa/router');
 const cors = require('@koa/cors');
 const PaymentProcessor = require('../build/contracts/PaymentProcessor.json');
 const { Payment } = require('./db.js');
+const { ethers } = require('ethers');
 
 const app = new Koa();
 const router = new Router();
@@ -49,7 +50,32 @@ app.listen(4000, () => {
 });
 
 const listenToEvents = () => {
-    const provider = new ethers.providers.JsonRpcProvider('http://localhost:9545')
+    const provider = new ethers.providers.JsonRpcProvider('http://localhost:9545');
+    const networkId = '5777';
+
+    const paymentProcessor = new ethers.Contract(
+        PaymentProcessor.networks[networkId].address,
+        PaymentProcessor.abi,
+        provider
+    );
+
+    paymentProcessor.on('PaymentDone', async (payer, amount, paymentId, date) => {
+        console.log(`
+            from ${payer}
+            amount ${amount}
+            paymentId ${paymentId}
+            date ${(new Date(date.toNumber() * 1000)).toLocaleString()}
+        `);
+        const payment = await Payment.findOne({id: paymentId});
+        if(payment) {
+            payment.paid = true;
+            await payment.save();
+        }
+    });
+
+   
+
+
 };
 
 
